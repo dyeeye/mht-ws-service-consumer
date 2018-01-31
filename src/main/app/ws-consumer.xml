@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ws="http://www.mulesoft.org/schema/mule/ws" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+    <http:request-config name="HTTP_Request_Configuration" doc:name="HTTP Request Configuration">
+        <http:basic-authentication username="myuser" password="mypassword" preemptive="true"/>
+    </http:request-config>
+    <flow name="ws-consumerFlow">
+        <http:listener config-ref="HTTP_Listener_Configuration" path="/weather" allowedMethods="GET" doc:name="HTTP"/>
+        <set-payload value="&lt;web:GetCitiesByCountry xmlns:web=&quot;http://www.webserviceX.NET&quot;&gt;
+	&lt;web:CountryName&gt;Poland&lt;/web:CountryName&gt;
+&lt;/web:GetCitiesByCountry&gt;
+" doc:name="Set Payload"/>
+        <ws:consumer config-ref="Web_Service_Consumer" operation="GetCitiesByCountry" doc:name="Web Service Consumer"/>
+        <choice doc:name="Choice">
+            <when expression="#[xpath3('count(//*:GetCitiesByCountryResult)')==0]">
+                <set-payload value="{
+	&quot;status&quot;: &quot;failed&quot;,
+	&quot;message&quot;: &quot;please try again later&quot;
+}" mimeType="application/json" doc:name="Set Error Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="{
+	&quot;country&quot;: &quot;Poland&quot;,
+	&quot;temperature&quot;: 14
+}" mimeType="application/json" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+</mule>
